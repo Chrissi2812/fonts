@@ -1,6 +1,8 @@
 var fs = require('fs'),
     path = require('path');
 
+const { gzip } = require('node-gzip');
+
 var fontnik = require('fontnik'),
     glyphCompose = require('@mapbox/glyph-pbf-composite');
 
@@ -56,16 +58,18 @@ var doFonts = function(dir, fonts) {
             }
           });
         });
-      })).then(function(results) {
+      })).then(async function(results) {
         results = results.filter(function(r) {return !!r;});
         var combined = glyphCompose.combine(results);
+        const compressed = await gzip(combined);
+
         var size = combined.length;
         sizeSum += size;
         histogram[start / 256] = size;
         if (DEBUG) {
           console.log('[%s] Range %s-%s size %s B', config.name, start, end, size);
         }
-        fs.writeFileSync(folderName + '/' + start + '-' + end + '.pbf', combined);
+        fs.writeFileSync(folderName + '/' + start + '-' + end + '.pbf', compressed);
       });
     };
 
